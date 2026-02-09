@@ -1,19 +1,17 @@
-# services/epl_service.py
 import requests
 import time
 import os
 import json
 
-
 # ===== Fetch helper =====
 def fetch_multi_season_api(
-    base_url,
-    seasons,
-    headers,
+    base_url: str,
+    seasons: range,
+    headers: dict,
     extractor_func,
-    sleep_sec=6,
-    save_raw=False,
-    raw_dir=None
+    sleep_sec: int = 6,
+    save_raw: bool = False,
+    raw_dir: str = None
 ):
     all_rows = []
 
@@ -32,12 +30,12 @@ def fetch_multi_season_api(
 
         rows = extractor_func(data, season)
         all_rows.extend(rows)
+
         time.sleep(sleep_sec)
 
     return all_rows
-
-
 # ===== Extractors =====
+
 def extract_standings(data, season):
     rows = []
     for standing in data.get("standings", []):
@@ -74,49 +72,3 @@ def fetch_all_team_squads(team_ids, headers, sleep_sec=6):
         rows.extend(extract_squad(r.json(), team_id))
         time.sleep(sleep_sec)
     return rows
-
-
-# ===== MAIN PIPELINE (AZURE) =====
-def run_epl_pipeline():
-    API_KEY = os.getenv("FOOTBALL_DATA_API_KEY")
-    if not API_KEY:
-        raise ValueError("FOOTBALL_DATA_API_KEY not set")
-
-    headers = {"X-Auth-Token": API_KEY}
-    BASE_DIR = "/tmp/eplraw"   
-    os.makedirs(BASE_DIR, exist_ok=True)
-
-    SEASONS = range(2023, 2026)
-
-    standings = fetch_multi_season_api(
-        "https://api.football-data.org/v4/competitions/PL/standings",
-        SEASONS, headers, extract_standings,
-        save_raw=True,
-        raw_dir=os.path.join(BASE_DIR, "standings")
-    )
-
-    matches = fetch_multi_season_api(
-        "https://api.football-data.org/v4/competitions/PL/matches",
-        SEASONS, headers, extract_matches
-    )
-
-    scorers = fetch_multi_season_api(
-        "https://api.football-data.org/v4/competitions/PL/scorers",
-        SEASONS, headers, extract_scorers
-    )
-
-    teams = fetch_multi_season_api(
-        "https://api.football-data.org/v4/competitions/PL/teams",
-        SEASONS, headers, extract_teams
-    )
-
-    team_ids = [t["id"] for t in teams]
-    squads = fetch_all_team_squads(team_ids, headers)
-
-    return {
-        "standings": len(standings),
-        "matches": len(matches),
-        "scorers": len(scorers),
-        "teams": len(teams),
-        "squads": len(squads)
-    }
