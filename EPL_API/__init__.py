@@ -1,6 +1,12 @@
 # EPL_API/__init__.py
 import azure.functions as func
 import json
+import sys
+import os
+
+# add project root to python path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+
 from services.epl_service import run_epl_pipeline
 
 
@@ -8,12 +14,12 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     try:
         result = run_epl_pipeline()
         return func.HttpResponse(
-            json.dumps(result, indent=2),
+            json.dumps(result, ensure_ascii=False, indent=2),
             mimetype="application/json",
             status_code=200
         )
     except Exception as e:
         return func.HttpResponse(
-            str(e),
+            f"ERROR: {str(e)}",
             status_code=500
         )
