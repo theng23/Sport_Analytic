@@ -1,12 +1,11 @@
 # EPL_API/__init__.py
-import azure.functions as func
-import json
 import sys
 import os
 
-# add project root to python path
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
+import azure.functions as func
+import json
 from services.epl_service import run_epl_pipeline
 
 
